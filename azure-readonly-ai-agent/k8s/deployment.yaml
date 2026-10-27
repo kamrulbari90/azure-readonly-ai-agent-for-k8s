@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: azure-readonly-ai-agent
+  namespace: ai-ops-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: azure-readonly-ai-agent
+  template:
+    metadata:
+      labels:
+        app: azure-readonly-ai-agent
+    spec:
+      serviceAccountName: ai-ops-readonly
+      containers:
+        - name: agent
+          image: YOUR_ACR.azurecr.io/azure-readonly-ai-agent:0.1.0
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - secretRef:
+                name: ai-ops-agent-secrets
+          env:
+            - name: K8S_IN_CLUSTER
+              value: "true"
+            - name: K8S_NAMESPACE
+              value: "default"
+            - name: K8S_ENABLED
+              value: "true"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            capabilities:
+              drop: ["ALL"]
